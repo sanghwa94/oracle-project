@@ -1,0 +1,539 @@
+SELECT USER
+FROM DUAL;
+--==>> HR
+
+------------------------------테이블 생성----------------------------------------
+--관리자정보 테이블
+CREATE TABLE TBL_ADMIN
+( ADMIN_CODE VARCHAR2(20) 
+, ADMIN_PW   VARCHAR2(20) CONSTRAINT ADMIN_ADMIN_PW_NN NOT NULL
+, CONSTRAINT ADMIN_ADMIN_CODE_PK PRIMARY KEY(ADMIN_CODE)
+);
+--==>> Table TBL_ADMIN이(가) 생성되었습니다.
+
+
+-- 교수정보 테이블
+-- 교수코드 첫 자리 P로 시작 P || 0001 ~~
+-- 주민번호 뒷자리에서 첫 자리에 입력 가능한 데이터 1,2,3,4 제약조건 설정
+CREATE TABLE TBL_PROFESSOR
+( PROF_CODE VARCHAR2(20)                                                                -- 교수코드 PK 
+, PROF_NAME VARCHAR2(20)         CONSTRAINT PROFESSOR_PROF_NAME_NN NOT NULL             -- 교수이름
+, PROF_SSN  CHAR(7)              CONSTRAINT PROFESSOR_PROF_SSN_NN NOT NULL              -- 주민번호 뒷자리
+, PROF_PW   VARCHAR2(20)         CONSTRAINT PROFESSOR_PROF_PW_NN NOT NULL               -- 교수PW
+, PROF_DATE  DATE DEFAULT SYSDATE CONSTRAINT PROFESSOR_PROF_DATE_NN NOT NULL             -- 등록일자
+, CONSTRAINT PROFESSOR_PROF_CODE_PK PRIMARY KEY(PROF_CODE)                                   -- 교수코드 기본키
+, CONSTRAINT PROFESSOR_PROF_SSN_CK  CHECK(SUBSTR(PROF_CODE,1,1) IN ('1','2','3','4'))        -- 교수주민번호 CK
+);
+--==>> Table TBL_PROFESSOR이(가) 생성되었습니다.
+
+--ALTER TABLE TBL_PROFESSOR
+--MODIFY PROF_PW DEFAULT PROF_SSN;       
+
+
+-- 학생정보 테이블
+-- 학생코드 첫 자리 S로 시작 S || 0001 ~~
+-- 주민번호 뒷자리에서 첫 자리에 입력 가능한 데이터 1,2,3,4 제약조건 설정
+CREATE TABLE TBL_STUDENT
+( STD_CODE  VARCHAR2(20)                                                                -- 학생코드
+, STD_NAME  VARCHAR2(20)    CONSTRAINT STUDENT_STD_NAME_NN NOT NULL                     -- 학생이름
+, STD_SSN   CHAR(7)         CONSTRAINT STUDENT_STD_SSN_NN NOT NULL                      -- 주민번호 뒷자리
+, STD_PW    VARCHAR2(20)    CONSTRAINT STUDENT_STD_PW_NN NOT NULL                       -- 학생PW
+, STD_DATE  DATE            DEFAULT SYSDATE   CONSTRAINT STUDENT_STD_DATE_NN NOT NULL   -- 등록일자
+, CONSTRAINT STUDENT_STD_CODE_PK PRIMARY KEY(STD_CODE)
+, CONSTRAINT STUDENT_STD_SSN_CK CHECK(SUBSTR(STD_SSN, 1, 1) IN ('1', '2', '3', '4'))
+);
+--==>> Table TBL_STUDENT이(가) 생성되었습니다.
+
+
+-- 과정정보 테이블
+CREATE TABLE TBL_COURSE
+( CRS_CODE VARCHAR2(20)                                                                 -- 과정코드
+, CRS_NAME VARCHAR2(50) CONSTRAINT COURSE_CRS_NAME_NN NOT NULL                          -- 과정이름
+, CONSTRAINT COURSE_CRS_CODE_PK PRIMARY KEY(CRS_CODE)
+);
+--==>> Table TBL_COURSE이(가) 생성되었습니다.
+
+ALTER TABLE TBL_COURSE MODIFY CRS_NAME VARCHAR2(100);
+--==>> Table TBL_COURSE이(가) 변경되었습니다.
+
+-- 과목정보 테이블
+CREATE TABLE TBL_SUBJECT
+( SUB_CODE  VARCHAR2(20)                                                                -- 과목코드
+, SUB_NAME  VARCHAR2(50) CONSTRAINT SUBJECT_SUB_NAME_NN NOT NULL                        -- 과목이름
+, CONSTRAINT SUBJECT_SUB_CODE_PK PRIMARY KEY(SUB_CODE)
+);
+--==>> Table TBL_SUBJECT이(가) 생성되었습니다.
+
+
+-- 교재정보 테이블
+CREATE TABLE TBL_BOOK
+( BOOK_CODE VARCHAR2(20)                                                                -- 교재코드
+, BOOK_NAME VARCHAR2(50)    CONSTRAINT BOOK_BOOK_NAME_NN NOT NULL                       -- 교재이름
+, CONSTRAINT BOOK_BOOK_CODE_PK PRIMARY KEY(BOOK_CODE)
+);
+--==>> Table TBL_BOOK이(가) 생성되었습니다.
+ALTER TABLE TBL_BOOK MODIFY BOOK_NAME VARCHAR2(100);
+--==>> Table TBL_BOOK이(가) 변경되었습니다.
+
+-- 강의실정보 테이블
+-- 수용인원 제약조건 설정
+CREATE TABLE TBL_ROOM
+( ROOM_CODE VARCHAR2(20)                                                                -- 강의실코드
+, ROOM_NAME VARCHAR2(30)    CONSTRAINT ROOM_ROOM_NAME_NN NOT NULL                       -- 강의실이름
+, ROOM_NUM  NUMBER(3)       CONSTRAINT ROOM_ROOM_NUM_NN NOT NULL                        -- 수용인원
+, CONSTRAINT ROOM_ROOM_CODE_PK PRIMARY KEY(ROOM_CODE)
+, CONSTRAINT ROOM_ROOM_NUM_CK CHECK(ROOM_NUM > 0)
+);
+--==>> Table TBL_ROOM이(가) 생성되었습니다.
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD';
+
+
+-- 과정개설 테이블
+-- 과정시작일자가 SYSDATE < 과정시작일자 조건 → TRIGGER
+-- 과정종료일자가 과목시작일자 < 과목종료일자 제약조건 설정
+CREATE TABLE TBL_OPENC
+( OPENC_CODE  VARCHAR2(20)                                                              -- 과정개설코드
+, CRS_CODE    VARCHAR2(20) CONSTRAINT OPENC_CRS_CODE_NN NOT NULL                        -- 과정코드
+, ROOM_CODE   VARCHAR2(20) CONSTRAINT OPENC_ROOM_CODE_NN NOT NULL                       -- 강의실코드
+, CRS_START   DATE CONSTRAINT OPENC_CRS_START_NN NOT NULL                               -- 과정시작일자
+, CRS_END     DATE CONSTRAINT OPENC_CRS_END_NN NOT NULL                                 -- 과정종료일자
+, CONSTRAINT OPENC_OPENC_CODE_PK PRIMARY KEY(OPENC_CODE)
+, CONSTRAINT OPENC_CRS_CODE_FK FOREIGN KEY(CRS_CODE)
+             REFERENCES TBL_COURSE(CRS_CODE)
+, CONSTRAINT OPENC_ROOM_CODE_FK FOREIGN KEY(ROOM_CODE)
+             REFERENCES TBL_ROOM(ROOM_CODE)
+--, CONSTRAINT OPENC_CRS_START_CK CHECK (SYSDATE < CRS_START)           INSERT TRIGGER시 적용해야할 부분
+, CONSTRAINT OPENC_CRS_END_CK CHECK (CRS_START < CRS_END)
+);
+--==>> Table TBL_OPENC이(가) 생성되었습니다.
+
+
+-- 과목개설 테이블
+-- 과목시작일자가 SYSDATE < 과목시작일자 조건 → TRIGGER
+-- 과목종료일자가 과목시작일자 < 과목종료일자 제약조건 설정
+-- 배점 0~100사이, 배점 합이 100까지인 조건은 예외처리로 할건지 여기서 넣을건지? 네
+CREATE TABLE TBL_OPENS
+( OPENS_CODE    VARCHAR2(20)                                                            -- 과목개설코드
+, OPENC_CODE    VARCHAR2(20) CONSTRAINT OPENS_OPENC_CODE_NN NOT NULL                    -- 과정개설코드
+, SUB_CODE      VARCHAR2(20) CONSTRAINT OPENS_SUB_CODE_NN NOT NULL                      -- 과목코드
+, BOOK_CODE     VARCHAR2(20) CONSTRAINT OPENS_BOOK_CODE_NN NOT NULL                     -- 교재코드
+, PROF_CODE     VARCHAR2(20) CONSTRAINT OPENS_PROF_CODE_NN NOT NULL                     -- 교수코드
+, SUB_START     DATE         CONSTRAINT OPENS_SUB_STRAT_NN NOT NULL                     -- 과목시작일자
+, SUB_END       DATE         CONSTRAINT OPENS_SUB_END_NN NOT NULL                       -- 과목종료일자
+, C_PERCENT     NUMBER(3)                                                              -- 출결배점
+, S_PERCENT     NUMBER(3)                                                              -- 실기배점
+, P_PERCENT     NUMBER(3)                                                              -- 필기배점
+, CONSTRAINT OPENS_OPENS_CODE_PK PRIMARY KEY(OPENS_CODE)
+, CONSTRAINT OPENS_OPENC_CODE_FK FOREIGN KEY(OPENC_CODE) REFERENCES TBL_OPENC(OPENC_CODE)
+, CONSTRAINT OPENS_SUB_CODE_FK FOREIGN KEY(SUB_CODE) REFERENCES TBL_SUBJECT(SUB_CODE)
+, CONSTRAINT OPENS_BOOK_CODE_FK FOREIGN KEY(BOOK_CODE) REFERENCES TBL_BOOK(BOOK_CODE)
+, CONSTRAINT OPENS_PROF_CODE_FK FOREIGN KEY(PROF_CODE) REFERENCES TBL_PROFESSOR(PROF_CODE)
+--, CONSTRAINT OPENS_SUB_START_CK CHECK (SYSDATE < SUB_START)            INSERT TRIGGER시 적용해야할 부분
+, CONSTRAINT OPENS_SUB_END_CK CHECK (SUB_START < SUB_END)
+, CONSTRAINT OPENS_PERCENT_TOTAL_CK CHECK (C_PERCENT + S_PERCENT + P_PERCENT = 100)
+, CONSTRAINT OPENS_C_PERCENT_CK CHECK (0 <= C_PERCENT AND C_PERCENT <= 100)
+, CONSTRAINT OPENS_S_PERCENT_CK CHECK (0 <= S_PERCENT AND S_PERCENT <= 100)
+, CONSTRAINT OPENS_P_PERCENT_CK CHECK (0 <= P_PERCENT AND P_PERCENT <= 100)
+);
+--==>> Table TBL_OPENS이(가) 생성되었습니다.
+
+
+
+-- 수강신청 테이블
+-- 수강신청일자 → 수강신청일자(SYSDATE) < 과정시작일자 제약조건 생략 → INSERT 프로시저시 적용해야할 부분
+CREATE TABLE TBL_REGISTER                                                       
+( REGISTER_CODE VARCHAR2(20)                                                        -- 수강신청코드
+, OPENC_CODE    VARCHAR2(20)          CONSTRAINT REGISTER_OPENC_CODE_NN NOT NULL    -- 과정개설코드
+, STD_CODE      VARCHAR2(20)          CONSTRAINT REGISTER_STD_CODE_NN NOT NULL      -- 학생코드
+, REGISTER_DATE DATE DEFAULT SYSDATE  CONSTRAINT REGISTER_REGISTER_DATE_NN NOT NULL -- 수강신청일자
+, CONSTRAINT REGISTER_REGISTER_CODE_PK PRIMARY KEY(REGISTER_CODE)                   -- 수강신청코드 기본키
+, CONSTRAINT REGISTER_OPENC_CODE_FK FOREIGN KEY(OPENC_CODE)                         -- 과정개설코드 FK
+            REFERENCES TBL_OPENC(OPENC_CODE)
+, CONSTRAINT REGISTER_STU_CODE_FK FOREIGN KEY(STD_CODE)                             -- 학생코드 FK
+            REFERENCES TBL_STUDENT(STD_CODE)
+--, CONSTRAINT REGISTER_REGI_CODE_CK CHECK(REGISTER_CODE BETWEEN 30000 AND 39999)      -- 수강신청코드 CK
+);
+--==>> Table TBL_REGISTER이(가) 생성되었습니다.
+
+
+-- 성적정보 테이블 생성
+-- 출결 → 0 <= 출결 <= 출결배점  프로시저에서 적용해야할 부분
+CREATE TABLE TBL_SCORE
+( REGISTER_CODE VARCHAR2(20) CONSTRAINT SCORE_REGISTER_CODE_NN NOT NULL             -- 수강신청코드
+, OPENS_CODE    VARCHAR2(20) CONSTRAINT SCORE_OPENS_CODE_NN NOT NULL                -- 과목개설코드
+, C_SCORE       NUMBER(3)                                                           -- 출결
+, S_SCORE       NUMBER(3)                                                           -- 실기
+, P_SCORE       NUMBER(3)                                                           -- 필기
+, CONSTRAINT SCORE_REGISTER_CODE_FK FOREIGN KEY(REGISTER_CODE)
+             REFERENCES TBL_REGISTER(REGISTER_CODE)
+, CONSTRAINT SCORE_OPENS_CODE_FK FOREIGN KEY(OPENS_CODE)
+             REFERENCES TBL_OPENS(OPENS_CODE)
+);
+--==>> Table TBL_SCORE이(가) 생성되었습니다.
+
+
+-- 중도탈락
+-- 중도탈락일자 과정시작일자 <= 중도탈락일자 < 과정종료일자   → 프로시저에서 적용해야할 부분
+-- 실제 중도탈락 신청일자와 명단에 추가될 탈락일자가 다를 수 있어서 DEFAULT SYSDATE 적용하지 않았음
+CREATE TABLE TBL_FAIL
+( REGISTER_CODE VARCHAR2(20)     CONSTRAINT FAIL_REGISTER_CODE_NN NOT NULL           -- 수강신청코드
+, FAIL_DATE     DATE            CONSTRAINT FAIL_FAIL_DATE_NN NOT NULL               -- 중도탈락일자
+, FAIL_REASON   VARCHAR2(100)                                                       -- 중도탈락사유
+, CONSTRAINT FAIL_REGISTER_CODE_FK FOREIGN KEY(REGISTER_CODE)
+             REFERENCES TBL_REGISTER(REGISTER_CODE)
+);
+--==>> Table TBL_FAIL이(가) 생성되었습니다.
+
+------------------------------테이블 생성 끝-------------------------------------
+
+------------------------------데이터 입력----------------------------------------
+
+SET SERVEROUTPUT ON;
+--==>> 작업이 완료되었습니다.
+
+--테이블목록 조회
+SELECT OBJECT_NAME
+FROM USER_OBJECTS
+WHERE OBJECT_TYPE = 'TABLE';
+
+--뷰목록 조회
+SELECT OBJECT_NAME
+FROM USER_OBJECTS
+WHERE OBJECT_TYPE = 'VIEW';
+
+--프로시저목록 조회
+SELECT OBJECT_NAME
+FROM USER_PROCEDURES
+WHERE OBJECT_TYPE = 'PROCEDURE';
+
+--함수목록 조회
+SELECT OBJECT_NAME
+FROM USER_PROCEDURES
+WHERE OBJECT_TYPE = 'FUNCTION';
+
+SELECT *
+FROM TBL_OPENS;
+
+--현재 Sequence 값 조회
+SELECT SEQ_REGISTER.CURRVAL
+FROM DUAL;
+
+--Sequence 초기화 구문
+ALTER SEQUENCE SEQ_REGISTER INCREMENT BY -18;
+SELECT SEQ_REGISTER.NEXTVAL
+FROM DUAL;
+ALTER SEQUENCE SEQ_REGISTER INCREMENT BY 1; 
+
+
+-- 관리자 정보 입력
+INSERT INTO TBL_ADMIN(ADMIN_CODE,ADMIN_PW)
+VALUES('ADMIN',1234);
+--==>> 1 행 이(가) 삽입되었습니다.
+
+SELECT *
+FROM TBL_ADMIN;
+
+-- 학생 입력 
+EXEC PRC_STUDENT_INSERT('김가영', '2345678');
+EXEC PRC_STUDENT_INSERT('김서현', '2456789');
+EXEC PRC_STUDENT_INSERT('안정미', '2102938');
+EXEC PRC_STUDENT_INSERT('이상화', '2683941');
+EXEC PRC_STUDENT_INSERT('이새롬', '2987646');
+EXEC PRC_STUDENT_INSERT('김호진', '1029385');
+EXEC PRC_STUDENT_INSERT('전혜림', '2385921');
+EXEC PRC_STUDENT_INSERT('정주희', '2638493');
+EXEC PRC_STUDENT_INSERT('박정준', '1958302');
+EXEC PRC_STUDENT_INSERT('차은우', '1385921');
+EXEC PRC_STUDENT_INSERT('이하림', '4385921');
+EXEC PRC_STUDENT_INSERT('윤두준', '3385921');
+--==>> PL/SQL 프로시저가 성공적으로 완료되었습니다.
+SELECT *
+FROM TBL_STUDENT;
+
+-- 교수 입력
+EXEC PRC_PROFESSOR_INSERT('유승호', '1234567');
+EXEC PRC_PROFESSOR_INSERT('서강준', '1968203');
+EXEC PRC_PROFESSOR_INSERT('박보영', '2968391');
+EXEC PRC_PROFESSOR_INSERT('서인국', '1968402'); 
+EXEC PRC_PROFESSOR_INSERT('박보영', '2596820');
+EXEC PRC_PROFESSOR_INSERT('송강', '1852818');
+EXEC PRC_PROFESSOR_INSERT('이솜', '2485921');
+EXEC PRC_PROFESSOR_INSERT('박보영', '2948518');
+EXEC PRC_PROFESSOR_INSERT('배수지', '2182212');
+EXEC PRC_PROFESSOR_INSERT('전여빈', '2166192');
+EXEC PRC_PROFESSOR_INSERT('여진구', '3199494');
+--==>> PL/SQL 프로시저가 성공적으로 완료되었습니다.
+SELECT *
+FROM TBL_PROFESSOR;
+
+-- 과정 정보 입력
+EXEC PRC_COURSE_INSERT('임베디드 플랫폼 연동 융합 개발자 양성 과정');
+EXEC PRC_COURSE_INSERT('AWS 클라우드 활용 풀스택 개발자 양성 과정');
+EXEC PRC_COURSE_INSERT('JAVA 기반의 스마트 웹 풀스택 개발자 양성과정');
+EXEC PRC_COURSE_INSERT('JAVA를 활용한 웹 콘텐츠 양성과정');
+EXEC PRC_COURSE_INSERT('UI/UX를 활용한 웹 퍼블리셔 과정');
+--==>> PL/SQL 프로시저가 성공적으로 완료되었습니다.
+SELECT *
+FROM TBL_COURSE;
+
+-- 과목 정보 입력
+EXEC PRC_SUBJECT_INSERT('Java');
+EXEC PRC_SUBJECT_INSERT('Oracle');
+EXEC PRC_SUBJECT_INSERT('HTML');
+EXEC PRC_SUBJECT_INSERT('CSS');
+EXEC PRC_SUBJECT_INSERT('JSP');
+EXEC PRC_SUBJECT_INSERT('Servlet');
+EXEC PRC_SUBJECT_INSERT('UI/UX');
+EXEC PRC_SUBJECT_INSERT('JavaScript');
+EXEC PRC_SUBJECT_INSERT('jQuery');
+EXEC PRC_SUBJECT_INSERT('네트워크');
+--==>> PL/SQL 프로시저가 성공적으로 완료되었습니다.
+SELECT *
+FROM TBL_SUBJECT;
+
+-- 강의실 입력
+EXEC PRC_ROOM_INSERT('A강의장', 20);
+EXEC PRC_ROOM_INSERT('B강의장', 10);
+EXEC PRC_ROOM_INSERT('C강의장', 15);
+EXEC PRC_ROOM_INSERT('D강의장', 25);
+EXEC PRC_ROOM_INSERT('E강의장', 18);
+EXEC PRC_ROOM_INSERT('F강의장', 22);
+--==>> PL/SQL 프로시저가 성공적으로 완료되었습니다.
+SELECT *
+FROM TBL_ROOM;
+
+-- 교재 입력
+EXEC PRC_BOOK_INSERT('자바의 정석');
+EXEC PRC_BOOK_INSERT('이것이 자바다');
+EXEC PRC_BOOK_INSERT('HTML5+CSS3 웹표준의 정석');
+EXEC PRC_BOOK_INSERT('Do it! 자바스크립트 + 제이쿼리 입문');
+EXEC PRC_BOOK_INSERT('서비스 운영이 쉬워지는 AWS 인프라 구축 가이드');
+EXEC PRC_BOOK_INSERT('UML 기초와 응용');
+EXEC PRC_BOOK_INSERT('오라클로 배우는 데이터베이스 개론과 실습');
+EXEC PRC_BOOK_INSERT('모두의 네트워크');
+EXEC PRC_BOOK_INSERT('UI/UX 요구 분석');
+EXEC PRC_BOOK_INSERT('JSP 웹 프로그래밍 입문+활용');
+--==>> PL/SQL 프로시저가 성공적으로 완료되었습니다.
+
+SELECT *
+FROM TBL_BOOK;
+
+-- 과정개설 입력 PRC_OPENC_INSERT(과정코드,강의실코드,과정시작일자,과정종료일자)
+INSERT INTO TBL_OPENC(OPENC_CODE, CRS_CODE, ROOM_CODE, CRS_START, CRS_END)  
+VALUES('9999', '1000', '3000', '2020-11-01', '2021-02-01');
+INSERT INTO TBL_OPENC(OPENC_CODE, CRS_CODE, ROOM_CODE, CRS_START, CRS_END) 
+VALUES ('9998','1004','3005','2021-02-04','2021-05-02');
+EXEC PRC_OPENC_INSERT('1000', '3000', '2021-05-03', '2021-08-03');
+EXEC PRC_OPENC_INSERT('1001', '3005', '2021-06-14', '2021-09-14');
+EXEC PRC_OPENC_INSERT('1002', '3003', '2021-07-19', '2021-10-19');
+EXEC PRC_OPENC_INSERT('1003', '3003', '2021-10-22', '2022-01-22');
+--==>> PL/SQL 프로시저가 성공적으로 완료되었습니다.
+
+SELECT *
+FROM TBL_OPENC;
+
+-- 과목개설 입력 PRC_OPENS_INSERT(과정개설코드, 과목코드, 과목시작일, 과목종료일, 교재코드, 교수자코드)
+INSERT INTO TBL_OPENS(OPENS_CODE,OPENC_CODE, SUB_CODE, SUB_START, SUB_END, BOOK_CODE, PROF_CODE) 
+VALUES('29999','9999', '2000', '2020-11-01', '2020-12-01', '4000', 'P20211001');                                 
+INSERT INTO TBL_OPENS(OPENS_CODE,OPENC_CODE, SUB_CODE, SUB_START, SUB_END, BOOK_CODE, PROF_CODE) 
+VALUES('29998','9999', '2001', '2020-12-02', '2021-01-03', '4006', 'P20211002');                                 
+INSERT INTO TBL_OPENS(OPENS_CODE,OPENC_CODE, SUB_CODE, SUB_START, SUB_END, BOOK_CODE, PROF_CODE) 
+VALUES('29997','9999', '2002', '2021-01-04', '2021-02-01', '4002', 'P20211003');
+INSERT INTO TBL_OPENS(OPENS_CODE,OPENC_CODE, SUB_CODE, SUB_START, SUB_END, BOOK_CODE, PROF_CODE) 
+VALUES('29994','9998', '2006', '2021-02-04', '2021-03-01', '4009', 'P20211009');
+INSERT INTO TBL_OPENS(OPENS_CODE,OPENC_CODE, SUB_CODE, SUB_START, SUB_END, BOOK_CODE, PROF_CODE) 
+VALUES('29995','9998', '2001', '2021-03-02', '2021-04-03', '4001', 'P20211010');
+INSERT INTO TBL_OPENS(OPENS_CODE,OPENC_CODE, SUB_CODE, SUB_START, SUB_END, BOOK_CODE, PROF_CODE) 
+VALUES('29996','9998', '2002', '2021-04-04', '2021-05-02', '4006', 'P20211011');
+
+-- 과목개설 입력 PRC_OPENS_INSERT(과정개설코드, 과목코드, 과목시작일, 과목종료일, 교재코드, 교수자코드)
+EXEC PRC_OPENS_INSERT('10000', '2000', '2021-05-03', '2021-06-03', '4000', 'P20211001');
+EXEC PRC_OPENS_INSERT('10000', '2001', '2021-06-04', '2021-07-03', '4006', 'P20211002');
+EXEC PRC_OPENS_INSERT('10000', '2005', '2021-07-04', '2021-08-03', '4008', 'P20211003');
+EXEC PRC_OPENS_INSERT('10001', '2003', '2021-06-14', '2021-07-13', '4002', 'P20211004');
+EXEC PRC_OPENS_INSERT('10001', '2004', '2021-07-14', '2021-08-13', '4008', 'P20211005');
+EXEC PRC_OPENS_INSERT('10001', '2002', '2021-08-14', '2021-09-14', '4002', 'P20211006');
+EXEC PRC_OPENS_INSERT('10002', '2000', '2021-07-19', '2021-08-18', '4001', 'P20211007');
+EXEC PRC_OPENS_INSERT('10002', '2007', '2021-08-19', '2021-09-18', '4003', 'P20211008');
+EXEC PRC_OPENS_INSERT('10002', '2008', '2021-09-19', '2021-10-19', '4003', 'P20211009');
+EXEC PRC_OPENS_INSERT('10003', '2009', '2021-10-22', '2021-11-21', '4007', 'P20211010');
+EXEC PRC_OPENS_INSERT('10003', '2006', '2021-11-22', '2021-12-21', '4009', 'P20211011');
+EXEC PRC_OPENS_INSERT('10003', '2004', '2021-12-22', '2022-01-22', '4008', 'P20211001');
+
+SELECT *
+FROM TBL_OPENS;
+
+--수강신청입력 (수강신청코드, 과정개설코드, 학생코드, 수강신청일자)
+INSERT INTO TBL_REGISTER(REGISTER_CODE, OPENC_CODE, STD_CODE, REGISTER_DATE) 
+VALUES('39999', '9999', 'S20211001', TO_DATE('2020-10-25','YYYY-MM-DD')) ;                                              
+INSERT INTO TBL_REGISTER(REGISTER_CODE, OPENC_CODE, STD_CODE, REGISTER_DATE) 
+VALUES('39998', '9999', 'S20211002', TO_DATE('2020-10-25','YYYY-MM-DD')) ;                                              
+INSERT INTO TBL_REGISTER(REGISTER_CODE, OPENC_CODE, STD_CODE, REGISTER_DATE) 
+VALUES('39997', '9999', 'S20211003', TO_DATE('2020-10-25','YYYY-MM-DD')) ;
+INSERT INTO TBL_REGISTER(REGISTER_CODE, OPENC_CODE, STD_CODE, REGISTER_DATE) 
+VALUES('39996', '9998', 'S20211009', TO_DATE('2021-01-30','YYYY-MM-DD')) ;  
+INSERT INTO TBL_REGISTER(REGISTER_CODE, OPENC_CODE, STD_CODE, REGISTER_DATE) 
+VALUES('39995', '9998', 'S20211008', TO_DATE('2021-01-30','YYYY-MM-DD')) ;  
+INSERT INTO TBL_REGISTER(REGISTER_CODE, OPENC_CODE, STD_CODE, REGISTER_DATE) 
+VALUES('39994', '9998', 'S20211010', TO_DATE('2021-01-30','YYYY-MM-DD')) ;  
+
+--수강신청입력 (수강신청코드, 과정개설코드, 학생코드, 수강신청일자)
+EXEC PRC_REGISTER_INSERT('10000', 'S20211001'); 
+EXEC PRC_REGISTER_INSERT('10000', 'S20211006'); 
+EXEC PRC_REGISTER_INSERT('10000', 'S20211007'); 
+EXEC PRC_REGISTER_INSERT('10001', 'S20211003'); 
+EXEC PRC_REGISTER_INSERT('10001', 'S20211004'); 
+EXEC PRC_REGISTER_INSERT('10001', 'S20211011'); 
+EXEC PRC_REGISTER_INSERT('10002', 'S20211012'); 
+EXEC PRC_REGISTER_INSERT('10002', 'S20211002'); 
+EXEC PRC_REGISTER_INSERT('10002', 'S20211005');
+EXEC PRC_REGISTER_INSERT('10003', 'S20211009'); 
+EXEC PRC_REGISTER_INSERT('10003', 'S20211008');
+EXEC PRC_REGISTER_INSERT('10003', 'S20211010');
+
+SELECT *
+FROM TBL_REGISTER;
+
+-- 성적 테이블 조회 (수강신청코드, 과목개설코드, 출결점수, 실기점수, 필기점수)
+SELECT *
+FROM TBL_SCORE;
+
+SELECT *
+FROM TBL_SCORE;
+
+-- 수강신청 테이블 DELETE 프로시저 실행 PRC_REGISTER_DELETE(수강신청코드)
+EXEC PRC_REGISTER_DELETE('39999');
+
+
+--중도탈락 입력 PRC_FAIL_INSERT(수강신청코드, 중도탈락일자, 중도탈락사유)
+EXEC PRC_FAIL_INSERT('39994', SYSDATE ,'조기취업');
+
+--중도탈락 삭제 PRC_FAIL_DELETE(수강신청코드)
+--EXEC PRC_FAIL_DELETE('39994');
+
+SELECT *
+FROM TBL_FAIL;
+
+
+--관리자 로그인 프로시저
+EXEC PRC_LOGIN_ADMIN('ADMIN','1234');
+
+--관리자 패스워드 변경 프로시저
+EXEC PRC_ADMIN_UPDATE('ADMIN', 'ADMIN2', '1234', '5678');
+
+--학생 로그인 프로시저
+EXEC PRC_LOGIN_STUDENT('S20211002','2456789');
+
+--학생 패스워드 변경 프로시저 PRC_STUDENT_UPDATE(학생코드, 기존PW, 바꿀PW)
+EXEC PRC_STUDENT_UPDATE('S20211001', '2345678', 'RLARKDUD');
+
+--학생 정보 변경 프로시저(관리자입장) PRC_AD_STUDENT_UPDATE(학생코드, NEW이름, NEW주민번호)
+EXEC PRC_AD_STUDENT_UPDATE('S20211001', '김나영', '2345678');
+
+SELECT *
+FROM TBL_STUDENT;
+
+--학생 정보 삭제 프로시저 PRC_STUDENT_DELETE(학생코드)
+EXEC PRC_STUDENT_DELETE('S20211001');
+
+--교수 로그인 프로시저
+EXEC PRC_LOGIN_PROFESSOR('P20211001','RLARKDUD');
+
+--교수 패스워드 변경 프로시저
+EXEC PRC_PROFESSOR_UPDATE('P20211001', '유승호', '1234567', 'RLARKDUD');
+
+--교수 정보 변경 프로시저(관리자입장) PRC_AD_PROFESSOR_UPDATE(코드, NEW이름, NEW주민번호)
+EXEC PRC_AD_PROFESSOR_UPDATE('P20211001', '유승호', '1234567');
+
+SELECT*
+FROM TBL_PROFESSOR;
+
+--과목 VIEW (과정명, 강의실, 과목명, 과목시작일자, 과목종료일자, 교재명, 교수명)
+SELECT *
+FROM VIEW_SUBJECT;
+
+-- 과목 개설 삭제 프로시저 PRC_OPENS_DELETE(과목개설코드)
+EXEC PRC_OPENS_DELETE('20000');
+
+-- 학생 VIEW (학생이름, 과정명, 과목명, 과목총점, 과정수강상태)
+SELECT *
+FROM VIEW_STUDENT;
+
+-- 수강신청 가능한 목록을 보여주는 VIEW
+SELECT *
+FROM VIEW_REGISTER;
+
+
+-- 교수 로그인 시 과목 출력 프로시저 (강의 끝난 과목만!) PRC_PROF_SUBJECT_VIEW(교수코드)
+EXEC PRC_PROF_SUBJECT_VIEW('P20211002');
+--==>> 서강준 , Oracle , 20/12/02 , 21/01/03 , 오라클로 배우는 데이터베이스 개론과 실습
+
+--배점 입력 PRC_PERCENT_UPDATE(과목개설코드, 출결,실기,필기)
+EXEC PRC_PERCENT_UPDATE('29998', 30,30,40);
+EXEC PRC_PERCENT_UPDATE('29999', 20,40,40);
+EXEC PRC_PERCENT_UPDATE('29997', 10,50,40);
+EXEC PRC_PERCENT_UPDATE('29994', 30,30,40);
+EXEC PRC_PERCENT_UPDATE('29995', 20,40,40);
+EXEC PRC_PERCENT_UPDATE('29996', 10,50,40);
+--==>>
+/*
+29999	9999	2000	4000	P20211001	20/11/01	20/12/01	20	40	40
+29998	9999	2001	4001	P20211002	20/12/02	21/01/03	30	30	40
+29997	9999	2002	4003	P20211003	21/01/04	21/02/01	10	50	40
+*/
+
+SELECT *
+FROM TBL_OPENS;
+SELECT *
+FROM TBL_STUDENT;
+
+--교수사용자 성적입력 화면 (학생이름은 자동입력되어있고 출결/실기/필기 점수만 넣으면 됨/ 입력값은 교수코드+과목개설코드)
+-- 이때, 과정을 중도탈락하여 명단에서 제외된 학생은 성적입력 화면에서 제외되어야 함.
+EXEC PRC_PROFESSOR_SCORE_VIEW('P20211009', '29994');
+--==>> 중도탈락자인 차은우 학생의 정보가 나오지 않는 것을 알 수 있음.
+
+--성적 입력 PRC_SCORE_UPDATE(수강신청코드, 과목개설코드, 출결, 실기, 필기)
+--서현
+EXEC PRC_SCORE_UPDATE('39998', '29998', 30, 20, 30);
+EXEC PRC_SCORE_UPDATE('39997', '29998', 20, 30, 40);
+EXEC PRC_SCORE_UPDATE('39999', '29998', 25, 20, 30);
+--은우
+EXEC PRC_SCORE_UPDATE('39994', '29994', 30, 30, 40);
+EXEC PRC_SCORE_UPDATE('39995', '29994', 0, 20, 10);
+EXEC PRC_SCORE_UPDATE('39996', '29994', 10, 15, 20);
+
+SELECT *
+FROM TBL_SCORE;
+
+--교수사용자 성적 출력 PRC_PROFESSOR_SCOREINFO_VIEW(교수코드)
+EXEC PRC_PROFESSOR_SCOREINFO_VIEW('P20211009');
+--==>>
+/*
+과목명 : UI/UX| 과목기간 : 21/02/04| - 21/03/01| 교재명 : JSP 웹 프로그래밍 입문+활용| 학생 이름 : 차은우| 출결 : 30| 필기 : 40| 실기 : 30| 총점 : 100| 등수 : 1| 수강상태 : 중도탈락
+과목명 : UI/UX| 과목기간 : 21/02/04| - 21/03/01| 교재명 : JSP 웹 프로그래밍 입문+활용| 학생 이름 : 박정준| 출결 : 10| 필기 : 20| 실기 : 15| 총점 : 45| 등수 : 2| 수강상태 : 수강완료
+과목명 : UI/UX| 과목기간 : 21/02/04| - 21/03/01| 교재명 : JSP 웹 프로그래밍 입문+활용| 학생 이름 : 정주희| 출결 : 0| 필기 : 10| 실기 : 20| 총점 : 30| 등수 : 3| 수강상태 : 수강완료
+*/
+
+--학생사용자 로그인 후 과목 출력 PRC_STUDENT_SUB_VIEW(학생코드)
+EXEC PRC_STUDENT_SUB_VIEW('S20211010');
+--==>>
+/*
+과정명 : UI/UX를 활용한 웹 퍼블리셔 과정 | 과목명 : UI/UX | 과목일자 : 21/02/04 - 21/03/01 수강상태 : 중도탈락
+과정명 : UI/UX를 활용한 웹 퍼블리셔 과정 | 과목명 : Oracle | 과목일자 : 21/03/02 - 21/04/03 수강상태 : 중도탈락
+*/
+
+--학생사용자 성적 출력 PRC_STUDENT_SUBINFO_VIEW(학생코드, 과목개설코드)
+EXEC PRC_STUDENT_SUBINFO_VIEW('S20211010', '29994');
+--==>> 이름 : 차은우 | 과정명 : UI/UX를 활용한 웹 퍼블리셔 과정 | 과목명 : UI/UX | 교육일자 : 21/02/04 - 21/05/02 | 교재명 : JSP 웹 프로그래밍 입문+활용 | 출결 : 30 필기 : 30 실기 : 40 총점 : 100 등수 : 1
+
+--과목 교수명 변경 EXEC PRC_OPENS_UPDATE(과정개설코드, 과목개설코드, 과목코드, 과목시작일, 과목종료일, 교재코드, 교수자코드)
+EXEC PRC_OPENS_UPDATE('10000', '20000', '2000', TO_DATE('21/05/03'), TO_DATE('21/06/03'), '4000', 'P20211002');
+--==>>
+--바꾸기 전 20000	    10000	2000	    4000    	P20211001	21/05/03	    21/06/03	
+--바꾼 후   20000	10000	2000	    4000	    P20211002	21/05/03	    21/06/03	
+
+SELECT *
+FROM TBL_OPENS;
+
+
