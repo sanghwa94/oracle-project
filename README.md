@@ -13,4 +13,9 @@ oracle을 활용하여 만든 성적 처리 시스템입니다.
 
 
 
+## 기타 자료
 
+[사용자 요구 분석](https://github.com/sanghwa94/oracle-project/blob/main/%E2%96%92%20%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8%EC%9A%94%EA%B5%AC%EB%B6%84%EC%84%9D-%EC%84%B1%EC%A0%81%EC%B2%98%EB%A6%AC%EC%8B%9C%EC%8A%A4%ED%85%9C(v1.55).pdf)
+
+
+[프로젝트 회의록](https://github.com/sanghwa94/oracle-project/blob/main/%5BOracle%5D%204TEAM_%ED%9A%8C%EC%9D%98%EB%A1%9D.docx)
